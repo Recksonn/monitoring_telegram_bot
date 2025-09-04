@@ -3,7 +3,7 @@ from telebot import types
 import db_settings
 import os
 
-bot_token = str(open("token.txt", "r", encoding='utf-8').read())
+bot_token = str(open("token.txt", "r", encoding='utf-8').read()).strip()
 bot = telebot.TeleBot(bot_token)
 
 user_state = {}
@@ -26,38 +26,45 @@ def start(message):
             bot.send_message(message.chat.id, config_info)
 
         else:
-            if str(message.chat.id) == f"{open("owner_id.txt", "r").read()}":
+            if str(message.chat.id) == f"{open("owner_id.txt", "r").read().strip()}":
                 db_settings.start(message.chat.id)
             else:
                 bot.send_message(message.chat.id, "У вас нет доступа к функциям этого бота")
 
     except Exception:
-        if str(message.chat.id) == f"{open("owner_id.txt", "r").read()}":
+        if str(message.chat.id) == f"{open("owner_id.txt", "r").read().strip()}":
             db_settings.start(message.chat.id)
         else:
             bot.send_message(message.chat.id, "У вас нет доступа к функциям этого бота")
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
-    if db_settings.is_admin(message.chat.id) == 1:
+    try:
+    
+        if db_settings.is_admin(message.chat.id) == 1:
 
-        try:
-            bot.delete_message(message.chat.id, message_id=(message.id - 1))
-            bot.delete_message(message.chat.id, message_id=(message.id - 2))
-            bot.delete_message(message.chat.id, message_id=(message.id - 3))
-        except Exception:
-            pass
+            try:
+                bot.delete_message(message.chat.id, message_id=(message.id - 1))
+                bot.delete_message(message.chat.id, message_id=(message.id - 2))
+                bot.delete_message(message.chat.id, message_id=(message.id - 3))
+            
+            except Exception:
+                pass
 
-        markup = types.InlineKeyboardMarkup(row_width=1)
+            markup = types.InlineKeyboardMarkup(row_width=1)
 
-        button1 = types.InlineKeyboardButton("Управление ботами", callback_data="bots_menu")
-        button2 = types.InlineKeyboardButton("Добавить бота", callback_data="add_bot")
-        button3 = types.InlineKeyboardButton("Изменить конфиг", callback_data="edit_config")
+            button1 = types.InlineKeyboardButton("Управление ботами", callback_data="bots_menu")
+            button2 = types.InlineKeyboardButton("Добавить бота", callback_data="add_bot")
+            button3 = types.InlineKeyboardButton("Изменить конфиг", callback_data="edit_config")
 
-        markup.add(button1, button2, button3)
-        bot.send_message(message.chat.id, "Меню", reply_markup=markup)
-    else:
-        bot.send_message(message.chat.id, "У вас нет доступа к функциям этого бота")
+            markup.add(button1, button2, button3)
+            bot.send_message(message.chat.id, "Меню", reply_markup=markup)
+            
+        else:
+            bot.send_message(message.chat.id, "У вас нет доступа к функциям этого бота")
+            
+    except Exception:
+    	bot.send_message(message.chat.id, "У вас нет доступа к функциям этого бота")
 
 
 @bot.message_handler(func=lambda message: user_state.get(message.chat.id) == 'waiting_for_name')
@@ -130,7 +137,7 @@ def inline_callback(call):
             if "systemctl" in call.data:
                 try:
                     if "systemctl status" in call.data:
-                        os.system(f"{call.data} > file.txt")
+                        os.system(f"{call.data.split("--->")[1]} > file.txt")
                         with open("file.txt", encoding='utf-8') as file:
                             for line in file.readlines():
                                 if line.strip()[:7] == "Active:":
@@ -152,7 +159,7 @@ def inline_callback(call):
                                 else:
                                     continue
                     else:
-                        os.system(call.data)
+                        os.system(call.data.split("--->")[1])
                         bot.send_message(call.message.chat.id, f"Выполнена команда '{call.data}'")
                 except Exception as ex:
                     bot.send_message(call.message.chat.id, f"Не удалось выполнить команду"
