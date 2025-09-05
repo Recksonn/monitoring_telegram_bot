@@ -72,14 +72,20 @@ def create_bot(message):
     bot_name = message.text.strip()
     if bot_name:
         try:
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            
             db_settings.create_table(bot_name)
+            
+            menu_button = types.InlineKeyboardButton(f"Вернуться в меню", callback_data="menu")
+            markup.row(menu_button)
+            
             bot.send_message(message.chat.id,
                              "Бот создан\nКоманды для бота можно добавить в разделе 'Управление ботами'",
-                             reply_markup=buttons_remove)
+                             reply_markup=markup)
         except Exception:
             bot.send_message(message.chat.id,
                              "Не удалось создать бота",
-                             reply_markup=buttons_remove)
+                             reply_markup=markup)
         finally:
             del user_state[message.chat.id]
 
@@ -89,10 +95,15 @@ def create_admin(message):
     admin_id = message.text.strip()
     if admin_id:
         try:
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            
             db_settings.add_admin(admin_id)
-
+            
+            menu_button = types.InlineKeyboardButton(f"Вернуться в меню", callback_data="menu")
+            markup.row(menu_button)
+            
             bot.send_message(message.chat.id,
-                             f"Администратор добавлен!")
+                             f"Администратор добавлен!", reply_markup=markup)
         except Exception:
             bot.send_message(message.chat.id,
                              f"Не удалось добавить администратора!")
@@ -105,8 +116,14 @@ def add_new_command(message):
     command = message.text.strip()
     if command:
         try:
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            
             db_settings.add_command(current_bot_name, command.split("\n"))
-            bot.send_message(message.chat.id, f"Команды успешно добавлены!")
+            
+            menu_button = types.InlineKeyboardButton(f"Вернуться в меню", callback_data="menu")
+            markup.row(menu_button)
+            
+            bot.send_message(message.chat.id, f"Команды успешно добавлены!", reply_markup=markup)
             try:
                 bot.delete_message(message.chat.id, message_id=(message.id-1))
                 bot.delete_message(message.chat.id, message_id=(message.id-2))
@@ -169,6 +186,7 @@ def inline_callback(call):
                 bot.delete_message(call.message.chat.id, message_id=call.message.id)
 
                 try:
+                    menu_button = types
                     db_settings.delete_bot(call.data[11:])
                     bot.send_message(call.message.chat.id, f"Бот успешно удалён!")
                 except Exception:
@@ -193,6 +211,8 @@ def inline_callback(call):
 
                 try:
                     bot.delete_message(call.message.chat.id, message_id=call.message.id)
+                    bot.delete_message(call.message.chat.id, message_id=(call.message.id-1))
+                    bot.delete_message(call.message.chat.id, message_id=(call.message.id-2))
                 except Exception:
                     pass
                 bot.send_message(call.message.chat.id, "Меню", reply_markup=markup)
